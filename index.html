@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Empirical Variational Autoencoder (EVA): high-fidelity, efficient generation of continuous-valued sequences." />
+    <meta name="theme-color" content="#0a1022" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <title>EVA — Empirical Variational Autoencoder</title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap');
+
+      :root { --ink:#111a2e; --navy:#0a1022; --paper:#f5f6fb; --line:#d9ddeb; --muted:#63708a; --coral:#ff6654; --blue:#4c82ff; --soft:#e8efff; }
+      * { box-sizing:border-box; }
+      html { scroll-behavior:smooth; }
+      body { margin:0; color:var(--ink); font:16px/1.65 "DM Sans", Arial, sans-serif; background:var(--paper); }
+      a { color:inherit; text-decoration:none; }
+      .mono { font-family:"DM Mono", monospace; letter-spacing:.02em; }
+      .shell { width:min(1180px, calc(100% - 48px)); margin:auto; }
+      .top { background:var(--navy); color:#f9fbff; padding-bottom:74px; overflow:hidden; position:relative; }
+      .top::after { content:""; position:absolute; width:720px; height:720px; right:-280px; top:-260px; border:1px solid rgba(105,143,255,.25); border-radius:50%; box-shadow:0 0 0 78px rgba(105,143,255,.06),0 0 0 156px rgba(105,143,255,.035); }
+      nav { height:74px; display:flex; align-items:center; justify-content:space-between; position:relative; z-index:1; }
+      .brand { font:700 22px/1 "DM Mono", monospace; letter-spacing:-.08em; } .brand span { color:var(--coral); }
+      .navlinks { display:flex; gap:25px; align-items:center; color:#c6cce2; font-size:14px; }
+      .navlinks a:hover { color:#fff; }
+      .hero { position:relative; z-index:1; text-align:center; padding:56px 0 8px; }
+      .eyebrow { display:inline-flex; align-items:center; gap:8px; color:#9fb5ff; font:500 12px "DM Mono", monospace; letter-spacing:.11em; text-transform:uppercase; }
+      .eyebrow::before { content:""; width:22px; height:1px; background:var(--coral); }
+      h1 { max-width:930px; margin:19px auto 18px; font:600 clamp(2.55rem, 6vw, 5.45rem)/.98 "Playfair Display", Georgia, serif; letter-spacing:-.055em; }
+      h1 em { color:#a8bbff; font-weight:600; }
+      .subtitle { max-width:690px; margin:0 auto; color:#c9d0e6; font-size:19px; line-height:1.55; }
+      .authors { margin:23px auto 0; color:#fff; font-size:15px; } .affiliation { color:#99a6c7; font-size:14px; }
+      .actions { display:flex; flex-wrap:wrap; justify-content:center; gap:12px; margin-top:29px; }
+      .button { display:inline-flex; gap:9px; align-items:center; border:1px solid rgba(255,255,255,.22); border-radius:99px; padding:10px 17px; font-size:14px; font-weight:600; transition:.2s; }
+      .button svg { width:16px; height:16px; fill:currentColor; flex:none; } .button:hover { transform:translateY(-2px); background:rgba(255,255,255,.1); } .button.primary { background:var(--coral); border-color:var(--coral); color:#fff; } .button.model { background:#263b87; border-color:#587aff; color:#fff; } .button.model:hover { background:#334ca7; }
+      .button.primary:hover { background:#ef5140; }
+      .visual { margin-top:54px; border-radius:12px; overflow:hidden; border:1px solid rgba(161,185,255,.2); box-shadow:0 24px 60px rgba(0,0,0,.31); line-height:0; }
+      .visual img { width:100%; display:block; }
+      .main { background:#fff; }
+      section { padding:92px 0; } .intro { border-bottom:1px solid var(--line); }
+      .kicker { margin-bottom:15px; color:#e55345; font:500 12px "DM Mono", monospace; letter-spacing:.1em; text-transform:uppercase; }
+      h2 { margin:0; font:600 clamp(2rem, 3.7vw, 3.55rem)/1.03 "Playfair Display", Georgia, serif; letter-spacing:-.04em; }
+      .introgrid { display:grid; grid-template-columns:.95fr 1.3fr; gap:clamp(35px, 9vw, 150px); align-items:start; }
+      .lead { margin:0; font-size:20px; line-height:1.65; color:#303c56; } .lead strong { color:var(--ink); }
+      .method { background:var(--paper); } .method-grid { display:grid; grid-template-columns:1.05fr .95fr; column-gap:50px; row-gap:42px; align-items:start; }
+      .sequence { background:var(--navy); border-radius:12px; padding:27px; min-height:320px; color:#dce6ff; position:relative; overflow:hidden; }
+      .sequence::before { content:""; position:absolute; inset:-60% 30% auto auto; width:300px; height:300px; border:1px solid #435d9d; border-radius:50%; }
+      .sequence-label { color:#8ca7ff; font:500 11px "DM Mono", monospace; letter-spacing:.1em; text-transform:uppercase; }
+      .track { display:flex; align-items:center; gap:8px; position:relative; margin-top:92px; }
+      .node { width:43px; height:43px; display:grid; place-items:center; flex:none; border:1px solid #7394f3; border-radius:50%; background:#172449; color:#fff; font:500 11px "DM Mono", monospace; }
+      .node.hot { border-color:var(--coral); background:var(--coral); } .rail { height:1px; flex:1; background:linear-gradient(90deg,#7596ff,#ff6654); }
+      .sequence-copy { position:absolute; left:27px; right:27px; bottom:26px; font-size:14px; line-height:1.55; color:#b3c0e4; }
+      .framework-image { grid-column:1; grid-row:1; margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 18px 38px rgba(25,35,68,.09); }
+      .framework-image img { display:block; width:100%; height:auto; }
+      .latent { background:#fff; border-top:1px solid var(--line); } .latent-grid { display:grid; grid-template-columns:.82fr 1.18fr; gap:clamp(35px, 5vw, 72px); align-items:start; } .latent-figure { width:85%; justify-self:center; margin:0; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; box-shadow:0 18px 38px rgba(25,35,68,.07); } .latent-figure img { display:block; width:100%; height:auto; } .latent-figure figcaption { padding:15px 17px 17px; border-top:1px solid var(--line); color:#69748b; font-size:13px; line-height:1.55; } .latent-copy { padding-top:26px; } .latent-copy p { max-width:560px; color:#4f5a73; font-size:17px; line-height:1.7; }
+      .method-copy { grid-column:2; grid-row:1; } .method-copy p { color:#4f5a73; font-size:17px; } .steps-panel { grid-column:1 / -1; grid-row:2; } .steps-heading { margin:0 0 10px; color:#e55345; font:500 11px "DM Mono", monospace; letter-spacing:.1em; text-transform:uppercase; } .steps { display:grid; grid-template-columns:repeat(4, 1fr); margin-top:0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+      .step { display:grid; grid-template-columns:30px 1fr; gap:12px; min-height:100%; padding:20px 20px; border-right:1px solid var(--line); } .step:last-child { border-right:0; } .step b { font:500 13px "DM Mono", monospace; color:var(--coral); } .step span { font-size:15px; color:#35415a; }
+      .results { background:#fff; } .result-image { margin:34px 0 0; border:1px solid var(--line); border-radius:10px; overflow:hidden; background:#fff; } .result-image img { display:block; width:100%; height:auto; } .result-caption { max-width:940px; margin:20px 0 0; color:#56617a; font-size:15px; line-height:1.7; } .result-caption em { color:#283552; font-style:normal; font-weight:600; } .metrics { display:grid; grid-template-columns:repeat(3,1fr); margin-top:42px; border-top:1px solid var(--line); border-left:1px solid var(--line); }
+      .metric { padding:27px; border-right:1px solid var(--line); border-bottom:1px solid var(--line); } .metric-value { display:block; font:600 42px/1 "Playfair Display", Georgia, serif; letter-spacing:-.04em; } .metric-label { margin-top:9px; color:#56617a; font-size:14px; line-height:1.4; } .metric-note { margin-top:3px; color:#a1a9ba; font:11px "DM Mono", monospace; }
+      .samples { background:var(--navy); color:#f8faff; } .samples .kicker { color:#ff8678; } .samples-head { display:flex; align-items:end; justify-content:space-between; gap:30px; } .samples-head p { max-width:490px; margin:0; color:#b7c2e1; }
+      .sound-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:40px; }
+      .sound-card { min-width:0; padding:20px; border:1px solid #293558; border-radius:9px; background:#111a30; } .sound-card h3 { margin:0 0 5px; font-size:16px; } .sound-card p { margin:0 0 17px; color:#91a1cb; font-size:12px; }
+      .bars { display:flex; gap:3px; height:28px; align-items:center; margin-bottom:18px; } .bars i { width:3px; background:#638dff; border-radius:4px; opacity:.65; } .bars i:nth-child(1){height:20%}.bars i:nth-child(2){height:72%}.bars i:nth-child(3){height:43%}.bars i:nth-child(4){height:90%}.bars i:nth-child(5){height:37%}.bars i:nth-child(6){height:65%}.bars i:nth-child(7){height:28%}.bars i:nth-child(8){height:78%}.bars i:nth-child(9){height:48%}.bars i:nth-child(10){height:95%}.bars i:nth-child(11){height:38%}.bars i:nth-child(12){height:67%}.bars i:nth-child(13){height:22%}.bars i:nth-child(14){height:52%}.bars i:nth-child(15){height:36%}
+      .sound-card.playing .bars i { animation:pulse .58s ease-in-out infinite alternate; background:var(--coral); } .sound-card.playing .bars i:nth-child(3n) { animation-delay:.22s; } @keyframes pulse { from{transform:scaleY(.35)} to{transform:scaleY(1.18)} }
+      .audio-row { display:flex; gap:7px; align-items:center; } .listen { cursor:pointer; border:0; background:#638dff; border-radius:99px; color:#fff; padding:7px 11px; font:500 12px "DM Sans", sans-serif; } .listen:hover{background:var(--coral)} .variant { cursor:pointer; appearance:none; max-width:86px; flex:1; border:1px solid #354367; border-radius:99px; padding:6px 5px; background:#151f37; color:#cbd6f4; font:11px "DM Sans", sans-serif; } .variant:focus{outline:2px solid #a8bbff; outline-offset:2px;}
+      .gallery { background:var(--paper); } .gallery-head { max-width:650px; } .gallery-head p { color:#56617a; } .image-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:37px; } .image-grid figure { margin:0; overflow:hidden; background:#dfe3eb; aspect-ratio:4/3; } .image-grid img { width:100%; height:100%; object-fit:cover; display:block; transition:transform .35s; } .image-grid figure:hover img { transform:scale(1.04); }
+      .cite { background:#fff; } .cite-grid { display:grid; grid-template-columns:.9fr 1.1fr; gap:70px; align-items:start; } pre { margin:0; overflow:auto; border:1px solid var(--line); border-radius:8px; padding:21px; background:#f8f9fc; color:#37415a; font:13px/1.55 "DM Mono", monospace; white-space:pre-wrap; } .cite p { color:#58637a; }
+      footer { padding:29px 0; background:var(--navy); color:#aab7d8; font-size:13px; } .footer-inner { display:flex; justify-content:space-between; gap:20px; } footer a { color:#fff; }
+      @media (max-width:760px) { .shell{width:min(100% - 32px, 1180px)} .navlinks{display:none} .top{padding-bottom:42px}.hero{padding-top:42px} h1{font-size:clamp(2.45rem, 13vw, 4.2rem)} .subtitle{font-size:17px}.visual{margin-top:40px} section{padding:64px 0}.introgrid,.method-grid,.latent-grid,.cite-grid{grid-template-columns:1fr;gap:28px}.method-copy,.framework-image,.steps-panel{grid-column:1;grid-row:auto}.framework-image{margin-top:4px}.steps-panel{margin-top:2px}.steps{grid-template-columns:1fr;border-bottom:0}.step{padding:15px 0;border-right:0;border-bottom:1px solid var(--line)}.latent-figure{width:85%;order:2}.latent-copy{order:1;padding-top:0}.metrics{grid-template-columns:1fr}.metric{padding:22px}.samples-head{display:block}.samples-head p{margin-top:18px}.sound-grid{grid-template-columns:repeat(2,1fr)}.image-grid{grid-template-columns:repeat(2,1fr)} }
+      @media (max-width:390px) { .sound-grid{grid-template-columns:1fr}.actions{gap:8px}.button{padding:9px 13px}.footer-inner{display:block}.footer-inner span+span{display:block;margin-top:8px} }
+    </style>
+  </head>
+  <body>
+    <header class="top">
+      <div class="shell">
+        <nav aria-label="Main navigation"><a class="brand" href="#top">EVA<span>.</span></a><div class="navlinks"><a href="#method">Method</a><a href="#results">Results</a><a href="#audio">Audio</a><a href="#images">Image</a><a href="#citation">Citation</a></div></nav>
+        <div class="hero" id="top">
+          <h1><em>Empirical</em> Variational<br />Autoencoder</h1>
+          <p class="subtitle">A simple empirical latent prior turns VAEs into high-fidelity generators for continuous-valued sequences.</p>
+          <p class="authors"><a href="https://mapooon.github.io/">Kaede Shiohara</a><br /><span class="affiliation">The University of Tokyo</span></p>
+          <div class="actions"><a class="button primary" href="https://arxiv.org/abs/2610.06545"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm1 7V4.5L19.5 9zM8 13h8v1.5H8zm0 3h8v1.5H8z"/></svg>Read the paper</a><a class="button model" href="https://github.com/mapooon/EVA"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 .7A11.3 11.3 0 0 0 8.4 22.7c.57.1.77-.25.77-.55v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.63 1.22 3.27.93.1-.73.39-1.22.71-1.5-2.5-.28-5.13-1.25-5.13-5.57 0-1.23.44-2.24 1.16-3.03-.12-.29-.5-1.43.11-2.98 0 0 .95-.3 3.1 1.16A10.7 10.7 0 0 1 12 6.18c.96 0 1.92.13 2.82.38 2.15-1.46 3.1-1.16 3.1-1.16.61 1.55.23 2.69.11 2.98.72.79 1.16 1.8 1.16 3.03 0 4.33-2.63 5.28-5.14 5.56.4.35.76 1.03.76 2.08v3.08c0 .3.2.66.78.55A11.3 11.3 0 0 0 12 .7Z"/></svg>Use EVA</a><a class="button" href="#audio">See/Listen to samples <span aria-hidden="true">•</span></a></div>
+          <div class="visual"><img src="assets/images/teaser.png" alt="Curated image samples generated by EVA-L on ImageNet" /></div>
+        </div>
+      </div>
+    </header>
+    <main class="main">
+      <section class="intro"><div class="shell introgrid"><div><div class="kicker">Overview</div><h2>Learn the prior from the data.</h2></div><p class="lead">EVA replaces the fixed standard-Gaussian constraint in conventional VAEs with a <strong>self-predicted autoregressive latent prior</strong>. The result is a closer match between prior and posterior, yielding efficient ancestral sampling without quantization (VQVAE) or iterative denoising (diffusion).</p></div></section>
+      <section class="method" id="method"><div class="shell method-grid"><div class="method-copy"><div class="kicker">How it works</div><h2>One linear layer revives VAEs.</h2><p>EVA keeps the familiar encoder–decoder structure of VAEs and learns the autoregressive prior with an additional linear layer for prior prediction on the causal decoder backbone.</p></div><figure class="framework-image"><img src="assets/images/framework-preview.png" alt="EVA framework for training and inference" /></figure><div class="steps-panel"><div class="steps-heading">4 steps from VAE to EVA generation.</div><div class="steps"><div class="step"><b>01</b><span>Make the VAE decoder "causal".</span></div><div class="step"><b>02</b><span>Reconstruct the input token and predict the next prior.</span></div><div class="step"><b>03</b><span>Minimize KL divergence between the posterior and the predicted prior.</span></div><div class="step"><b>04</b><span>Sample latents ancestrally and decode them causally at inference.</span></div></div></div></div></section>
+      <section class="results" id="results"><div class="shell"><div class="kicker">ImageNet-256 & VGGSound</div><h2>Competitive fidelity, efficient sampling.</h2><figure class="result-image"><img src="assets/images/result.png" alt="Quantitative ImageNet and VGGSound results for EVA and baselines" /></figure><p class="result-caption"><em>Comparison with Baselines on ImageNet (256×256) and VGGSound.</em> AR-Diffusion (12 blocks) has the same number of Transformer blocks as EVA at inference time while AR-Diffusion (24 blocks) has the same number of Transformer blocks as EVA at training time. In the right, we visualize AR-Diffusion with different denoising steps {10, 15, 20, 30, 40, 50}. Despite the fewer inference parameters and faster inference time, our method achieves competitive generation fidelity.</p></div></section>
+      <section class="samples" id="audio"><div class="shell"><div class="samples-head"><div><div class="kicker">VGGSound samples</div><h2>Hear EVA generate.</h2></div><p>Each clip contains a real reference and three independently generated samples. Select a variant, then play it—only one clip plays at a time.</p></div><div class="sound-grid" id="sound-grid"></div></div></section>
+      <section class="gallery" id="images"><div class="shell"><div class="gallery-head"><div class="kicker">ImageNet-256 SAMPLES</div><h2>See EVA generate.</h2><p>Uncurated samples from EVA-L trained on ImageNet at 256 × 256 resolution.</p></div><div class="image-grid"><figure><img src="assets/images/260_l.png" alt="Uncurated EVA-L ImageNet generation" loading="lazy" /></figure><figure><img src="assets/images/281_l.png" alt="Uncurated EVA-L ImageNet generation" loading="lazy" /></figure><figure><img src="assets/images/547_l.png" alt="Uncurated EVA-L ImageNet generation" loading="lazy" /></figure><figure><img src="assets/images/965_l.png" alt="Uncurated EVA-L ImageNet generation" loading="lazy" /></figure><figure><img src="assets/images/970_l.png" alt="Uncurated EVA-L ImageNet generation" loading="lazy" /></figure><figure><img src="assets/images/985_l.png" alt="Uncurated EVA-L ImageNet generation" loading="lazy" /></figure></div></div></section>
+      <section class="latent" id="latent-space"><div class="shell latent-grid"><figure class="latent-figure"><img src="assets/images/latent-preview.png" alt="Latent-space visualizations for Causal VAE and EVA" /><figcaption>Each patch represents bi-directional KL divergence between the source latent (+) and each latent. Lighter indicates similar to the source patch.</figcaption></figure><div class="latent-copy"><div class="kicker">Framework analysis</div><h2>Latent Space Visualization</h2><p>In EVA’s latent space, the semantically similar patches tend to have similar latent distributions, implying that learning generation naturally encourages the model to learn semantics.</p></div></div></section>
+      <section class="cite" id="citation"><div class="shell cite-grid"><div><div class="kicker">Citation</div><h2>Use EVA in your work.</h2><p>Please cite the arXiv version when using EVA in your work.</p><a class="button" style="border-color:#c6ccdc" href="https://arxiv.org/abs/2610.06545">View on arXiv <span aria-hidden="true">↗</span></a></div><pre>@article{shiohara2026empirical,
+  title={Empirical Variational Autoencoder},
+  author={Kaede Shiohara},
+  journal={arXiv:2610.06545},
+  year={2026}
+}</pre></div></section>
+    </main>
+    <footer><div class="shell footer-inner"><span>© 2026 Kaede Shiohara · The University of Tokyo</span><span><a href="https://arxiv.org/abs/2610.06545">Paper</a> &nbsp;·&nbsp; <a href="#audio">Audio samples</a></span></div></footer>
+    <script>
+      const examples = [
+        { id: '034', label: 'Cat meowing' },
+        { id: '081', label: 'Engine accelerating' },
+        { id: '214', label: 'Playing saxophone' },
+        { id: '283', label: 'Thunder' }
+      ];
+      const grid = document.getElementById('sound-grid');
+      let activeAudio = null;
+      examples.forEach(({ id, label }, index) => {
+        const card = document.createElement('article'); card.className = 'sound-card';
+        card.innerHTML = `<h3>${label}</h3><div class="bars" aria-hidden="true">${'<i></i>'.repeat(15)}</div><div class="audio-row"><button class="listen" type="button" aria-label="Play ${label}">Play</button><select class="variant" aria-label="Select variant for ${label}"><option value="real">Real</option><option value="1">EVA 1</option><option value="2">EVA 2</option><option value="3">EVA 3</option></select></div>`;
+        const button = card.querySelector('.listen'), select = card.querySelector('.variant');
+        let audio = new Audio(`assets/sounds/${id}/real.wav`);
+        const stop = () => { audio.pause(); audio.currentTime = 0; card.classList.remove('playing'); button.textContent = 'Play'; };
+        button.addEventListener('click', () => { if (activeAudio && activeAudio !== audio) activeAudio.__stop(); if (audio.paused) { audio.play(); activeAudio = audio; card.classList.add('playing'); button.textContent = 'Pause'; } else { audio.pause(); card.classList.remove('playing'); button.textContent = 'Play'; } });
+        select.addEventListener('change', () => { stop(); audio = new Audio(`assets/sounds/${id}/${select.value}.wav`); audio.__stop = stop; audio.addEventListener('ended', stop); });
+        audio.__stop = stop;
+        audio.addEventListener('ended', stop); grid.appendChild(card);
+      });
+    </script>
+  </body>
+</html>
